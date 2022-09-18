@@ -27,13 +27,11 @@ views:
     ####################################################
 
     cards:
-      - type: markdown
-        content: >
-          ## Увімкнене світло
       - type: custom:auto-entities
-        show_empty: false
+        show_empty: true
         card:
           type: entities
+          title: Увімкнене світло
           show_header_toggle: false
         filter:
           include:
@@ -41,6 +39,75 @@ views:
               state: "on"
               options:
                 secondary_info: last-changed
+      - type: entities
+        entities:
+          - switch.fl1_koridor_track
+          - switch.fl1_koridor_zerkalo
+        title: Коридор
+      - type: entities
+        entities:
+          - switch.fl1_dinigroom_led_chandelier_channel_1
+          - switch.fl1_dinigroom_led_chandelier_channel_2
+          - switch.fl1_stolovka_track
+          - switch.fl1_arka_ledarka_treki_channel_1
+          - switch.fl1_arka_ledarka_treki_channel_2
+        title: Їдальня
+      - type: entities
+        entities:
+          - switch.fl1_technical_light
+          - switch.fl1_technical_zerkalo
+        title: Технічна
+      - type: entities
+        entities:
+          - switch.shellyswitch25_68c63af9e4ad_channel_1
+          - switch.shellyswitch25_68c63af9e4ad_channel_2
+        title: Спальня
+      - type: entities
+        entities:
+          - switch.fl2_bathroom_mainlight
+        title: Ванна 2 поверх
+      - type: entities
+        entities:
+          - switch.fl1_kitchen_mainlight_nearstai_channel_2
+          - switch.shelly1_stairs
+          - switch.fl2_coridor_ceiling_light
+          - switch.fl1_zal_lustra_channel_2
+          - switch.fl1_zal_lustra_channel_1
+        title: Зал
+      - type: entities
+        entities:
+          - switch.fl1_kitchen_mainlight_nearstai_channel_1
+          - switch.fl1_kitchen_workingsurface_channel_1
+          - switch.fl1_kitchen_barnastoyka_penal_channel_2
+          - switch.fl1_kitchen_barnastoyka_penal_channel_1
+        title: Кухня
+      - type: entities
+        entities:
+          - switch.fl1_child_backlight
+          - switch.fl1_child_lighttrack
+        title: Дитяча
+      - type: entities
+        entities:
+          - switch.fl1_bathroom_led_fan_channel_1
+          - switch.fl1_bathroom_led
+        title: Ванна 1 поверх
+
+  - title: Опалення
+    cards:
+      - type: entities
+        entities:
+          - switch.fl2_bathroom_toweldryer
+      - type: thermostat
+        entity: climate.fl1_techroom_floor
+      - type: thermostat
+        entity: climate.fl1_bathroom_floor
+      - type: thermostat
+        entity: climate.fl1_kitchen_floor
+      - type: thermostat
+        entity: climate.fl1_livingroom_window
+      - type: thermostat
+        entity: climate.fl2_bathroom_floor
+
   - title: System
     cards:
       - type: horizontal-stack

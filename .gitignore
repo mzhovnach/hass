@@ -23,4 +23,5 @@ id_rsa*
 .cloud
 .google.token
 home-assistant.log
-home-assistant_v2.db
+home-assistant_v2
+
