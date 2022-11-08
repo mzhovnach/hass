@@ -12,6 +12,20 @@ resources:
 
 views:
   # View tab title.
+  - title: Кімнати
+    icon: mdi:map
+    cards:
+      - type: picture
+        image: /local/living_room_icon.jpeg
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/living_room
+      - type: picture
+        image: /local/vanna_1.png
+        tap_action:
+          action: navigate
+          navigation_path: /lovelace/bathroom_1
+  # View tab title.
   - title: Світло
     # Optional background (overwrites the global background).
 
@@ -107,10 +121,22 @@ views:
         entity: climate.fl1_livingroom_window
       - type: thermostat
         entity: climate.fl2_bathroom_floor
+  
+  - title: Ванна 1
+    path: bathroom_1
+    cards:
+      - type: entities
+        entities:
+          - switch.fl1_bathroom_led_fan_channel_1
+          - switch.fl1_bathroom_led
+          - climate.fl1_bathroom_floor
+          - sensor.vanna1_th_sensor_temperature
+          - sensor.vanna1_th_sensor_humidity
+          - sensor.vanna1_th_sensor_pressure
 
   - title: System
     cards:
-      - type: horizontal-stack
+      - type: vertical-stack
         cards:
           - type: glance
             entities:
@@ -119,3 +145,16 @@ views:
             show_name: false
             entities:
               - sun.sun
+          - type: custom:auto-entities
+            show_empty: true
+            card:
+              type: entities
+              title: Батарейки
+              show_header_toggle: false
+            filter:
+                include:
+                 - entity_id: sensor.*battery*
+                exclude:
+                 - state: '> 100.0'
+                 - state: 'unknown'
+                 - entity_id: sensor.*_state

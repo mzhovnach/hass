@@ -1,0 +1,11 @@
+{
+    "0x00158d00047e01fa": {
+        "temperature": 23.21,
+        "humidity": 57.06,
+        "pressure": 994.1,
+        "linkquality": 63,
+        "voltage": 3205,
+        "battery": 100,
+        "power_outage_count": 15
+    }
+}

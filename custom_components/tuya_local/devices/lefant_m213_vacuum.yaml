@@ -1,4 +1,4 @@
-name: Lefant M213 Vacuum
+name: Lefant M213 vacuum
 primary_entity:
   entity: vacuum
   dps:
@@ -88,6 +88,8 @@ primary_entity:
           value: land_check
         - dps_val: 64
           value: collision
+        - dps_val: 1024
+          value: stuck
     - id: 19
       type: string
       name: map_parameter
@@ -129,7 +131,7 @@ primary_entity:
       optional: true
 secondary_entities:
   - entity: sensor
-    name: Clean Area
+    name: Clean area
     category: diagnostic
     icon: "mdi:floor-plan"
     dps:
@@ -138,7 +140,7 @@ secondary_entities:
         name: sensor
         unit: m2
   - entity: sensor
-    name: Clean Time
+    name: Clean time
     category: diagnostic
     icon: "mdi:clock-outline"
     dps:

@@ -95,7 +95,7 @@ class TuyaLocalLight(TuyaLocalEntity, LightEntity):
         if self._color_temp_dps:
             unscaled = self._color_temp_dps.get_value(self._device)
             r = self._color_temp_dps.range(self._device)
-            if r:
+            if r and isinstance(unscaled, (int, float)):
                 return round(unscaled * 347 / (r["max"] - r["min"]) + 153 - r["min"])
             else:
                 return unscaled
@@ -293,12 +293,6 @@ class TuyaLocalLight(TuyaLocalEntity, LightEntity):
                 ),
             }
 
-        if self._switch_dps:
-            settings = {
-                **settings,
-                **self._switch_dps.get_values_to_set(self._device, True),
-            }
-
         if self._effect_dps:
             effect = params.get(ATTR_EFFECT, None)
             if effect:
@@ -311,7 +305,14 @@ class TuyaLocalLight(TuyaLocalEntity, LightEntity):
                     ),
                 }
 
-        await self._device.async_set_properties(settings)
+        if self._switch_dps and not self.is_on:
+            settings = {
+                **settings,
+                **self._switch_dps.get_values_to_set(self._device, True),
+            }
+
+        if settings:
+            await self._device.async_set_properties(settings)
 
     async def async_turn_off(self):
         if self._switch_dps:

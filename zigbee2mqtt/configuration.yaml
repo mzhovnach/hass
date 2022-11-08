@@ -1,0 +1,12 @@
+homeassistant: true
+mqtt:
+  server: mqtt://core-mosquitto
+  user: mqtt
+  password: mqtt
+serial:
+  port: /dev/ttyUSB0
+frontend:
+  port: 8099
+devices:
+  '0x00158d00047e01fa':
+    friendly_name: vanna1_TH_sensor

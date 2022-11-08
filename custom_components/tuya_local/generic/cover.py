@@ -27,25 +27,33 @@ class TuyaLocalCover(TuyaLocalEntity, CoverEntity):
           config (TuyaEntityConfig): The entity config
         """
         dps_map = self._init_begin(device, config)
-        self._position_dps = dps_map.pop("position", None)
-        self._currentpos_dps = dps_map.pop("current_position", None)
-        self._control_dps = dps_map.pop("control", None)
-        self._action_dps = dps_map.pop("action", None)
-        self._open_dps = dps_map.pop("open", None)
-
+        self._position_dp = dps_map.pop("position", None)
+        self._currentpos_dp = dps_map.pop("current_position", None)
+        self._control_dp = dps_map.pop("control", None)
+        self._action_dp = dps_map.pop("action", None)
+        self._open_dp = dps_map.pop("open", None)
+        self._reversed_dp = dps_map.pop("reversed", None)
         self._init_end(dps_map)
 
         self._support_flags = 0
-        if self._position_dps:
+        if self._position_dp:
             self._support_flags |= CoverEntityFeature.SET_POSITION
-        if self._control_dps:
-            if "stop" in self._control_dps.values(self._device):
+        if self._control_dp:
+            if "stop" in self._control_dp.values(self._device):
                 self._support_flags |= CoverEntityFeature.STOP
-            if "open" in self._control_dps.values(self._device):
+            if "open" in self._control_dp.values(self._device):
                 self._support_flags |= CoverEntityFeature.OPEN
-            if "close" in self._control_dps.values(self._device):
+            if "close" in self._control_dp.values(self._device):
                 self._support_flags |= CoverEntityFeature.CLOSE
         # Tilt not yet supported, as no test devices known
+
+    @property
+    def _is_reversed(self):
+        return self._reversed_dp and self._reversed_dp.get_value(self._device)
+
+    def _maybe_reverse(self, percent):
+        """Reverse the percentage if it should be, otherwise leave it alone"""
+        return 100 - percent if self._is_reversed else percent
 
     @property
     def device_class(self):
@@ -63,40 +71,46 @@ class TuyaLocalCover(TuyaLocalEntity, CoverEntity):
         """Inform HA of the supported features."""
         return self._support_flags
 
+    def _state_to_percent(self, state):
+        """Convert a state to percent open"""
+        if state == "opened":
+            return 100
+        elif state == "closed":
+            return 0
+        else:
+            return 50
+
     @property
     def current_cover_position(self):
         """Return current position of cover."""
-        if self._currentpos_dps:
-            pos = self._currentpos_dps.get_value(self._device)
+        if self._currentpos_dp:
+            pos = self._currentpos_dp.get_value(self._device)
             if pos is not None:
-                return pos
-        if self._position_dps:
-            return self._position_dps.get_value(self._device)
+                return self._maybe_reverse(pos)
 
-        if self._open_dps:
-            state = self._open_dps.get_value(self._device)
+        if self._position_dp:
+            pos = self._position_dp.get_value(self._device)
+            return self._maybe_reverse(pos)
+
+        if self._open_dp:
+            state = self._open_dp.get_value(self._device)
             if state is not None:
                 return 100 if state else 0
 
-        if self._action_dps:
-            state = self._action_dps.get_value(self._device)
-            if state == "opened":
-                return 100
-            elif state == "closed":
-                return 0
-            else:
-                return 50
+        if self._action_dp:
+            state = self._action_dp.get_value(self._device)
+            return self._state_to_percent(state)
 
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
         # If dps is available to inform current action, use that
-        if self._action_dps:
-            return self._action_dps.get_value(self._device) == "opening"
+        if self._action_dp:
+            return self._action_dp.get_value(self._device) == "opening"
         # Otherwise use last command and check it hasn't completed
-        if self._control_dps:
+        if self._control_dp:
             return (
-                self._control_dps.get_value(self._device) == "open"
+                self._control_dp.get_value(self._device) == "open"
                 and self.current_cover_position != 100
             )
 
@@ -104,12 +118,12 @@ class TuyaLocalCover(TuyaLocalEntity, CoverEntity):
     def is_closing(self):
         """Return if the cover is closing or not."""
         # If dps is available to inform current action, use that
-        if self._action_dps:
-            return self._action_dps.get_value(self._device) == "closing"
+        if self._action_dp:
+            return self._action_dp.get_value(self._device) == "closing"
         # Otherwise use last command and check it hasn't completed
-        if self._control_dps:
+        if self._control_dp:
             return (
-                self._control_dps.get_value(self._device) == "close"
+                self._control_dp.get_value(self._device) == "close"
                 and not self.is_closed
             )
 
@@ -120,19 +134,21 @@ class TuyaLocalCover(TuyaLocalEntity, CoverEntity):
 
     async def async_open_cover(self, **kwargs):
         """Open the cover."""
-        if self._control_dps and "open" in self._control_dps.values(self._device):
-            await self._control_dps.async_set_value(self._device, "open")
-        elif self._position_dps:
-            await self._position_dps.async_set_value(self._device, 100)
+        if self._control_dp and "open" in self._control_dp.values(self._device):
+            await self._control_dp.async_set_value(self._device, "open")
+        elif self._position_dp:
+            pos = 0 if self._is_reversed else 100
+            await self._position_dp.async_set_value(self._device, pos)
         else:
             raise NotImplementedError()
 
     async def async_close_cover(self, **kwargs):
         """Close the cover."""
-        if self._control_dps and "close" in self._control_dps.values(self._device):
-            await self._control_dps.async_set_value(self._device, "close")
-        elif self._position_dps:
-            await self._position_dps.async_set_value(self._device, 0)
+        if self._control_dp and "close" in self._control_dp.values(self._device):
+            await self._control_dp.async_set_value(self._device, "close")
+        elif self._position_dp:
+            pos = 100 if self._is_reversed else 0
+            await self._position_dp.async_set_value(self._device, pos)
         else:
             raise NotImplementedError()
 
@@ -140,14 +156,15 @@ class TuyaLocalCover(TuyaLocalEntity, CoverEntity):
         """Set the cover to a specific position."""
         if position is None:
             raise AttributeError()
-        if self._position_dps:
-            await self._position_dps.async_set_value(self._device, position)
+        if self._position_dp:
+            position = self._maybe_reverse(position)
+            await self._position_dp.async_set_value(self._device, position)
         else:
             raise NotImplementedError()
 
     async def async_stop_cover(self, **kwargs):
         """Stop the cover."""
-        if self._control_dps and "stop" in self._control_dps.values(self._device):
-            await self._control_dps.async_set_value(self._device, "stop")
+        if self._control_dp and "stop" in self._control_dp.values(self._device):
+            await self._control_dp.async_set_value(self._device, "stop")
         else:
             raise NotImplementedError()

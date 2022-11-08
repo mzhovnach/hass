@@ -174,17 +174,13 @@ class TuyaEntityConfig:
         self._config = config
         self._is_primary = primary
 
-    def name(self, base_name):
+    def name(self):
         """The friendly name for this entity."""
-        own_name = self._config.get("name")
-        if own_name is None:
-            return base_name
-        else:
-            return base_name + " " + own_name
+        return self._config.get("name")
 
     def unique_id(self, device_uid):
         """Return a suitable unique_id for this entity."""
-        own_name = self._config.get("name")
+        own_name = self.name()
         if own_name:
             return f"{device_uid}-{slugify(own_name)}"
         else:
@@ -218,7 +214,7 @@ class TuyaEntityConfig:
     @property
     def config_id(self):
         """The identifier for this entity in the config."""
-        own_name = self._config.get("name")
+        own_name = self.name()
         if own_name:
             return f"{self.entity}_{slugify(own_name)}"
 
@@ -405,6 +401,17 @@ class TuyaDpsConfig:
         _LOGGER.debug(f"{self.name} values: {val}")
         return list(set(val)) if val else None
 
+    def default(self):
+        """Return the default value for a dp."""
+        if "mapping" not in self._config.keys():
+            _LOGGER.debug(
+                f"No mapping for {self.name}, unable to determine default value"
+            )
+            return None
+        for m in self._config["mapping"]:
+            if m.get("default", False):
+                return m.get("dps_val", None)
+
     def range(self, device, scaled=True):
         """Return the range for this dps if configured."""
         mapping = self._find_map_for_dps(device.get_property(self.id))
@@ -485,6 +492,23 @@ class TuyaDpsConfig:
                 return m
         return default
 
+    def _correct_type(self, result):
+        """Convert value to the correct type for this dp."""
+        if self.type is int:
+            _LOGGER.debug(f"Rounding {self.name}")
+            result = int(round(result))
+        elif self.type is bool:
+            result = True if result else False
+        elif self.type is float:
+            result = float(result)
+        elif self.type is str:
+            result = str(result)
+
+        if self.stringify:
+            result = str(result)
+
+        return result
+
     def _map_from_dps(self, value, device):
         if value is not None and self.type is not str and isinstance(value, str):
             try:
@@ -531,7 +555,7 @@ class TuyaDpsConfig:
                 r_dps = self._entity.find_dps(mirror)
                 return r_dps.get_value(device)
 
-            if invert:
+            if invert and isinstance(result, (int, float)):
                 r = self._config.get("range")
                 if r and "min" in r and "max" in r:
                     result = -1 * result + r["min"] + r["max"]
@@ -693,20 +717,7 @@ class TuyaDpsConfig:
                     f"{self.name} ({value}) must be between {minimum} and {maximum}"
                 )
 
-        if self.type is int:
-            _LOGGER.debug(f"Rounding {self.name}")
-            result = int(round(result))
-        elif self.type is bool:
-            result = True if result else False
-        elif self.type is float:
-            result = float(result)
-        elif self.type is str:
-            result = str(result)
-
-        if self.stringify:
-            result = str(result)
-
-        dps_map[self.id] = result
+        dps_map[self.id] = self._correct_type(result)
         return dps_map
 
     def icon_rule(self, device):
